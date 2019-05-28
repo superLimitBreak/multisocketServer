@@ -1,0 +1,25 @@
+version: '3.6'
+
+services:
+
+  subscriptionserver:
+    image: superlimitbreak/subscriptionserver:latest
+    build:
+      context: server/
+    ports:
+      - ${PORT_TCP}:${PORT_TCP}
+      - ${PORT_WEBSOCKET}:${PORT_WEBSOCKET}
+    #command: ["--tcp_port", "9872", "--websocket_port", "9873", "--log_level", "0"]  # For debugging to view messages
+
+  subscriptionserver_bridge:
+    image: superlimitbreak/subscriptionserver_bridge:latest
+    build:
+      context: webBridge/
+    ports:
+      - ${PORT_URL_WEBSOCKET_BRIDGE}:${PORT_URL_WEBSOCKET_BRIDGE}
+    links:
+      - subscriptionserver
+    command: [
+      '--port', '${PORT_URL_WEBSOCKET_BRIDGE}',
+      '--subscription_server_hostname', 'subscriptionserver:${PORT_TCP}',
+    ]
