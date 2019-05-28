@@ -15,6 +15,7 @@ services:
     image: superlimitbreak/subscriptionserver_bridge:latest
     build:
       context: webBridge/
+      # TODO: the Makefile copys the required client file to the webBridge folder. docker-compose build wont work without it. Consider alternatives ways to make this work as expected
     ports:
       - ${PORT_URL_WEBSOCKET_BRIDGE}:${PORT_URL_WEBSOCKET_BRIDGE}
     links:

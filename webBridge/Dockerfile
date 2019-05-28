@@ -1,10 +1,10 @@
 FROM python:alpine
 RUN pip install falcon
-COPY client_reconnect.py falcon_url_to_subscription_bridge.py /
+COPY client_reconnect.py webBridge.py /
 
 ENV PORT=8000
 ENV subscription_server_hostname=localhost:9872
-ENTRYPOINT ["python3", "falcon_url_to_subscription_bridge.py"]
+ENTRYPOINT ["python3", "webBridge.py"]
 #CMD ["--help"]
 # Cant use ENV's in CMD. Maybe we can use ARGS?
 CMD ["--port", "8000", "--subscription_server_hostname", "9872"]
