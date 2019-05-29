@@ -24,3 +24,6 @@ HEALTHCHECK --interval=15s --timeout=1s --retries=3 --start-period=1s \
 
 # docker build -t superlimitbreak/subscriptionserver:latest --file subscription_server.dockerfile .
 # docker run --rm -it -p 9872:9872 -p 9873:9873 superlimitbreak/subscriptionserver:latest
+
+
+# TODO: Add multistage build test

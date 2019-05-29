@@ -7,12 +7,9 @@ setup(
     name='multisocketServer',
     description='TCP/Websocket bridge with JSON message routing and reconnecting clients',
     version='0.0.1',
-    package_dir={
-        'client': 'client/python',
-        'server': 'server',
-    },
+    #package_dir={'': 'client/python'},
     packages=find_packages(
-        'python3',
+        #'client/python',
         exclude=["*.tests", "*.tests.*", "tests.*", "tests"],
     ),
     include_package_data=True,

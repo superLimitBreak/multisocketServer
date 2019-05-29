@@ -14,3 +14,6 @@ HEALTHCHECK --interval=15s --timeout=1s --retries=3 --start-period=1s \
 
 # docker build -t falcon_url_to_subscription_bridge --file falcon_url_to_subscription_bridge.dockerfile .
 # docker run --rm -it -p 8000:8000 falcon_url_to_subscription_bridge
+
+
+# TODO: Add multistage build tests

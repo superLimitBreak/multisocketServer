@@ -7,6 +7,9 @@ client_reconnect.py:
 build: client_reconnect.py
 	docker build --tag ${CONTAINER_TAG_WEB_BRIDGE} .
 
+push:
+	docker push ${CONTAINER_TAG_WEB_BRIDGE}
+
 run:
 	docker run -it --rm ${CONTAINER_TAG_WEB_BRIDGE}
 
@@ -15,3 +18,4 @@ run_local:
 
 clean:
 	rm -rf client_reconnect.py
+	docker rmi ${CONTAINER_TAG_WEB_BRIDGE}

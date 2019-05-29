@@ -8,3 +8,8 @@ build:
 push:
 	${MAKE} $@ --directory server
 	${MAKE} $@ --directory webBridge
+
+.PHONY: clean
+clean:
+	${MAKE} $@ --directory server
+	${MAKE} $@ --directory webBridge
