@@ -1,15 +1,17 @@
+PATH_SERVER=multisocketServer/server
+PATH_WEB_BRIDGE=webBridge
 
 .PHONY: build
 build:
-	${MAKE} $@ --directory server
-	${MAKE} $@ --directory webBridge
+	${MAKE} $@ --directory ${PATH_SERVER}
+	${MAKE} $@ --directory ${PATH_WEB_BRIDGE}
 
 .PHONY: push
 push:
-	${MAKE} $@ --directory server
-	${MAKE} $@ --directory webBridge
+	${MAKE} $@ --directory ${PATH_SERVER}
+	${MAKE} $@ --directory ${PATH_WEB_BRIDGE}
 
 .PHONY: clean
 clean:
-	${MAKE} $@ --directory server
-	${MAKE} $@ --directory webBridge
+	${MAKE} $@ --directory ${PATH_SERVER}
+	${MAKE} $@ --directory ${PATH_WEB_BRIDGE}
