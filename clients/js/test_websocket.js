@@ -1,4 +1,4 @@
-import {SocketReconnect, JsonSocketReconnect, SubscriptionSocketReconnect} from 'src/socket/websocket';
+import {SocketReconnect, JsonSocketReconnect, SubscriptionSocketReconnect} from 'websocket';
 
 
 const DISCONNECTED_RETRY_INTERVAL_MS = 1000;
