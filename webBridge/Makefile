@@ -14,7 +14,7 @@ run:
 	docker run -it --rm ${CONTAINER_TAG_WEB_BRIDGE}
 
 run_local:
-	python3 webBridge.py
+	python3 webBridge.py localhost:9872 --port 10794
 
 clean:
 	rm -rf client_reconnect.py

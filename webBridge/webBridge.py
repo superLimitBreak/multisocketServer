@@ -3,13 +3,13 @@ import json
 
 from client_reconnect import SubscriptionClient
 
-
-DEFAULT_SUBSCRIPTION_SERVER_HOSTNAME = 'localhost:9872'
+DEFAULT_PORT = 10794
+DEFAULT_SUBSCRIPTIONSERVER_HOST = 'localhost:9872'
 
 
 class URLtoSubscriptionServerBridge():
-    def __init__(self, *args, **kwargs):
-        self.client = SubscriptionClient(*args, **kwargs)
+    def __init__(self, subscription_client):
+        self.client = subscription_client
 
     def on_get(self, request, response):
         if self.client.socket:
@@ -25,19 +25,21 @@ class URLtoSubscriptionServerBridge():
 
 # Setup App -------------------------------------------------------------------
 
-def create_wsgi_app(subscription_server_hostname=None, **kwargs):
-    subscription_server_hostname = subscription_server_hostname or DEFAULT_SUBSCRIPTION_SERVER_HOSTNAME
+def create_wsgi_app(subscriptionserver_host=None, **kwargs):
+    subscriptionserver_host = subscriptionserver_host or DEFAULT_SUBSCRIPTIONSERVER_HOST
 
-    def parse_hostname_port(hostname):
-        data = subscription_server_hostname.split(':')
+    def parse_hostname_port(host):
+        data = host.split(':')
         if len(data) == 1:
             return {'host': data[0]}
         if len(data) == 2:
             return {'host': data[0], 'port': int(data[1])}
-        raise AttributeError(f'hostname {hostname} unparseable')
+        raise AttributeError(f'host {host} un-parseable')
+
+    subscription_client = SubscriptionClient(**parse_hostname_port(subscriptionserver_host))
 
     app = falcon.API()
-    app.add_route('/', URLtoSubscriptionServerBridge(**parse_hostname_port(subscription_server_hostname)))
+    app.add_route('/', URLtoSubscriptionServerBridge(subscription_client))
     return app
 
 
@@ -56,9 +58,9 @@ def get_args():
     )
 
     parser.add_argument('--host', action='store', default='0.0.0.0', help='')
-    parser.add_argument('--port', action='store', default=8000, type=int, help='')
+    parser.add_argument('--port', action='store', default=DEFAULT_PORT, type=int, help='')
 
-    parser.add_argument('--subscription_server_hostname', action='store', default=DEFAULT_SUBSCRIPTION_SERVER_HOSTNAME, help='')
+    parser.add_argument('subscriptionserver_host', action='store', default=DEFAULT_SUBSCRIPTIONSERVER_HOST, help='')
 
     kwargs = vars(parser.parse_args())
     return kwargs
@@ -79,8 +81,8 @@ def init_sigterm_handler():
 # Main ------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    kwargs = get_args()
     init_sigterm_handler()
+    kwargs = get_args()
 
     from wsgiref import simple_server
     httpd = simple_server.make_server(kwargs['host'], kwargs['port'], create_wsgi_app(**kwargs))
