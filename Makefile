@@ -11,6 +11,10 @@ push:
 	${MAKE} $@ --directory ${PATH_SERVER}
 	${MAKE} $@ --directory ${PATH_WEB_BRIDGE}
 
+.PHONY: cloc
+cloc:
+	cloc --vcs=git
+
 .PHONY: clean
 clean:
 	${MAKE} $@ --directory ${PATH_SERVER}
