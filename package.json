@@ -1,25 +1,23 @@
 {
-    "name": "multisocketServer",
-    "version": "0.0.1",
-    "description": "TCP/Websocket bridge with JSON message routing and reconnecting clients",
-    "main": "client/js",
-    "dependencies": {},
-    "devDependencies": {
-    },
-    "config": {
-      "ghooks": {
-        "pre-commit": "opt --in pre-commit --exec \"npm run validate\""
-      }
-    },
-    "scripts": {
-      "lint": "eslint ./src ./webpack.config.js -f table || true",
-      "test": "karma start",
-      "test:watch": "karma start --autoWatch=true --singleRun=false"
-    },
-    "repository": "git@github.com:superLimitBreak/multisocketServer.git",
-    "keywords": [
-    ],
-    "author": "calaldees@gmail.com",
-    "license": "GPL3",
-    "private": false
+  "name": "multisocketServer",
+  "version": "0.0.1",
+  "description": "TCP/Websocket bridge with JSON message routing and reconnecting clients",
+  "main": "client/js",
+  "dependencies": {},
+  "devDependencies": {},
+  "config": {
+    "ghooks": {
+      "pre-commit": "opt --in pre-commit --exec \"npm run validate\""
+    }
+  },
+  "scripts": {
+    "lint": "eslint ./src ./webpack.config.js -f table || true",
+    "test": "karma start",
+    "test:watch": "karma start --autoWatch=true --singleRun=false"
+  },
+  "repository": "git@github.com:superLimitBreak/multisocketServer.git",
+  "keywords": [],
+  "author": "calaldees@gmail.com",
+  "license": "GPL3",
+  "private": false
 }
