@@ -41,62 +41,53 @@ class SocketReconnect(object):
         """
         https://github.com/aaugustin/websockets/issues/414
         """
-        while self.active:  # outer loop restarted every time the connection fails
+        while self.active:
             try:
-                async with websockets.connect(self.uri) as ws:
-                    self.websocket = ws
-                    log.info(f'Connected {self.uri}')
+                async with websockets.connect(self.uri) as self.websocket:
                     self.onConnected()
-                    while self.active:  # listener loop
+                    while self.active:
                         try:
-                            self._receive(
-                                await asyncio.wait_for(self.websocket.recv(), timeout=self.timeout_msg.total_seconds())
-                            )
+                            data = await asyncio.wait_for(self.websocket.recv(), timeout=self.timeout_msg.total_seconds())
                         except (asyncio.TimeoutError, websockets.exceptions.ConnectionClosed):
                             try:
-                                pong = await ws.ping()
+                                pong = await self.websocket.ping()
                                 await asyncio.wait_for(pong, timeout=self.timeout_ping.total_seconds())
-                                log.debug('Ping OK, keeping connection alive...')
                                 continue
                             except:
-                                #await asyncio.sleep(self.timeout_reconnect.total_seconds())
-                                break  # inner loop
+                                break
+                        self._onMessage(data)
                     self.onDisconnected()
+            except Exception as ex:
+                self.websocket = None
+                #log.info('Its broken')
             #except socket.gaierror:
             #    log.info('Connection error?')
             #except ConnectionRefusedError:
             #    log.info('ConnectionRefusedError')
-            except Exception as ex:
-                self.websocket = None
-                log.info('Its broken')
             if not self.websocket:
                 await asyncio.sleep(self.timeout_reconnect.total_seconds())
 
     def close(self):
         self.active = False
 
-    def send(self, data):
+    async def send(self, data):
         try:
-            self.websocket.send(self._encode(data))
-        except (socket.error, AttributeError):  # BrokenPipeError
+            await self.websocket.send(umsgpack.dumps(data))
+        except Exception:
             log.debug('Failed send. Socket not connected: {0}'.format(data))
-            if self.buffer_failed_sends:
-                log.error('Unimplemented add to buffer failed send')
 
-
-    def _receive(self, data):
-        self.receive(umsgpack.loads(data))
+    def _onMessage(self, data):
+        self.onMessage(umsgpack.loads(data))
 
     # To be overridden
-    def receive(self, data):
-        log.info(data)
-
     def onConnected(self):
-        log.info('onConnected')
+        log.info(f'onConnected {self.uri}')
     def onDisconnected(self):
-        log.info('onDisconnected')
+        log.info(f'onDisconnected {self.uri}')
+    def onMessage(self, data):
+        log.info(data)
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     SocketReconnect(uri="ws://localhost:8765")
