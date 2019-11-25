@@ -9,19 +9,8 @@ import logging
 log = logging.getLogger(__name__)
 
 
-# async def hello():
-#     uri = "ws://localhost:8765"
-#     async with websockets.connect(uri) as websocket:
-#         data = {'hello': 'world'}
-#         await websocket.send(umsgpack.dumps(data))
-#         msg = umsgpack.loads(await websocket.recv())
-#         print(msg)
-# asyncio.get_event_loop().run_until_complete(hello())
-
-
-
-
 DEFAULT_RECONNECT_TIMEOUT = datetime.timedelta(seconds=10)
+
 
 class SocketReconnect(object):
     def __init__(self, uri, timeout_reconnect=DEFAULT_RECONNECT_TIMEOUT, autostart=True, buffer_failed_sends=False):
@@ -90,4 +79,4 @@ class SocketReconnect(object):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    SocketReconnect(uri="ws://localhost:8765")
+    SocketReconnect(uri="ws://localhost:9873")
