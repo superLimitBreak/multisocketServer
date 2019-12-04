@@ -1,6 +1,8 @@
 import datetime
 import asyncio
 import socket
+from multiprocessing import Queue
+
 
 import websockets
 import umsgpack
@@ -13,6 +15,18 @@ DEFAULT_RECONNECT_TIMEOUT = datetime.timedelta(seconds=10)
 
 
 class SocketReconnect(object):
+    """
+    https://docs.python.org/3/library/asyncio-task.html
+    https://realpython.com/async-io-python/
+    https://pymotw.com/3/asyncio/executors.html
+    https://hackernoon.com/python-async-decorator-to-reduce-debug-woes-nv2dg30q5
+
+    https://stackoverflow.com/questions/44853757/asynchronously-wait-for-multiprocessing-queue-in-main-process
+    https://stackoverflow.com/questions/24687061/can-i-somehow-share-an-asynchronous-queue-with-a-subprocess
+    https://docs.python.org/3/library/asyncio-dev.html#concurrency-and-multithreading
+    https://hackernoon.com/threaded-asynchronous-magic-and-how-to-wield-it-bba9ed602c32
+    https://quentin.pradet.me/blog/using-asynchronous-for-loops-in-python.html
+    """
     def __init__(self, uri, timeout_reconnect=DEFAULT_RECONNECT_TIMEOUT, autostart=True, buffer_failed_sends=False):
         self.uri = uri
         self.timeout_reconnect = timeout_reconnect if isinstance(timeout_reconnect, datetime.timedelta) else datetime.timedelta(seconds=timeout_reconnect)
@@ -23,6 +37,8 @@ class SocketReconnect(object):
         self.websocket = None
         if autostart:
             self.start()
+        self.queue_recv = Queue()
+        self.queue_send = Queue()
 
     def start(self):
         asyncio.get_event_loop().run_until_complete(self._listen_forever())
@@ -32,6 +48,7 @@ class SocketReconnect(object):
         """
         while self.active:
             try:
+                log.info('attempting')
                 async with websockets.connect(self.uri) as self.websocket:
                     self.onConnected()
                     while self.active:

@@ -6,8 +6,9 @@ data = {
     'action': 'message',
     'data': [
         {
-            'deviceid': 'test',
-            'bob':'uncle',
+            "deviceid": "main",
+            "func": "text.html_bubble",
+            "html": "<h1>Ready Steady Go</h1><p>Fullmetal Alchemist (Opening 2)</p><p>L'Arc-en-Ciel</p><p>Translation: Matt</p>",
         },
     ],
 }

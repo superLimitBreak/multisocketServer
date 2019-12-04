@@ -1,9 +1,11 @@
 {
   "name": "multisocketServer",
   "version": "0.0.1",
-  "description": "TCP/Websocket bridge with JSON message routing and reconnecting clients",
+  "description": "Websocket msgpack Subscription reconnecting client",
   "main": "client/js",
-  "dependencies": {},
+  "dependencies": {
+    "@msgpack/msgpack": "latest"
+  },
   "devDependencies": {},
   "config": {
     "ghooks": {

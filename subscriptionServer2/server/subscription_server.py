@@ -49,6 +49,7 @@ class SubscriptionServer():
         return set(keys)
     async def actionSubscribe(self, source, data):
         self.subscriptions[source] = self._parse_subscription_set(data)
+        log.info(f'subscribe: {source.remote_address} {self.subscriptions[source]}')
 
     async def actionMessage(self, source, data):
         for client, client_subscriptions in self.subscriptions.items():  # TODO: add async iter to end to multiple clients fast
@@ -63,6 +64,7 @@ class SubscriptionServer():
             )
             if not messages_for_this_client:
                 continue
+            log.info(f'message: {source.remote_address} {messages_for_this_client}')
             await client.send(umsgpack.dumps(
                 {'action': 'message', 'data': messages_for_this_client}
             ))
@@ -73,6 +75,8 @@ class SubscriptionServer():
         try:
             async for data in source:
                 await self.onMessage(source, umsgpack.loads(data))
+        except websockets.ConnectionClosedError as ex:
+            log.debug('ConnectionClosedError')
         except Exception as ex:
             log.exception('Error with websocket connection')
         finally:
@@ -85,10 +89,15 @@ class SubscriptionServer():
         stop = loop.create_future()
         loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
         async def server_with_stop(stop):
-            async with websockets.serve(self.subscription_server, "localhost", self.port):  # TODO: remove localhost?
+            async with websockets.serve(self.subscription_server, "0.0.0.0", self.port):  # TODO: remove localhost?
                 await stop
-        loop.run_until_complete(server_with_stop(stop))
-        loop.run_forever()
+        try:
+            loop.run_until_complete(server_with_stop(stop))
+            #loop.run_forever()  # this is redundent?
+        except KeyboardInterrupt as ex:
+            pass
+        finally:
+            log.info('Shutdown')
 
 
 def get_args():
