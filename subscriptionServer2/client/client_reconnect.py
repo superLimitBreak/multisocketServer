@@ -1,7 +1,8 @@
 import datetime
 import asyncio
 import socket
-from multiprocessing import Queue
+from multiprocessing.queues import Empty as MultiprocessingQueueEmpty
+import aioprocessing
 
 
 import websockets
@@ -11,13 +12,14 @@ import logging
 log = logging.getLogger(__name__)
 
 
-DEFAULT_RECONNECT_TIMEOUT = datetime.timedelta(seconds=10)
+DEFAULT_RECONNECT_TIMEOUT = datetime.timedelta(seconds=5)
 
 
 class SocketReconnect(object):
     """
-    https://docs.python.org/3/library/asyncio-task.html
+    https://docs.python.org/3/library/asyncio.html
     https://realpython.com/async-io-python/
+    https://github.com/dano/aioprocessing
     https://pymotw.com/3/asyncio/executors.html
     https://hackernoon.com/python-async-decorator-to-reduce-debug-woes-nv2dg30q5
 
@@ -27,28 +29,57 @@ class SocketReconnect(object):
     https://hackernoon.com/threaded-asynchronous-magic-and-how-to-wield-it-bba9ed602c32
     https://quentin.pradet.me/blog/using-asynchronous-for-loops-in-python.html
     """
-    def __init__(self, uri, timeout_reconnect=DEFAULT_RECONNECT_TIMEOUT, autostart=True, buffer_failed_sends=False):
+    def __init__(
+        self,
+        uri,
+        timeout_reconnect=DEFAULT_RECONNECT_TIMEOUT,
+        autostart=True,
+        buffer_failed_sends=False,
+        loads=umsgpack.loads,
+        dumps=umsgpack.dumps,
+    ):
         self.uri = uri
         self.timeout_reconnect = timeout_reconnect if isinstance(timeout_reconnect, datetime.timedelta) else datetime.timedelta(seconds=timeout_reconnect)
         self.timeout_msg = self.timeout_reconnect  # temp
         self.timeout_ping = self.timeout_reconnect  # temp
         self.buffer_failed_sends = buffer_failed_sends
+        self.loads = loads
+        self.dumps = dumps
+        self.queue_recv = aioprocessing.AioQueue()
+        self.queue_send = aioprocessing.AioQueue()
+
         self.active = True
         self.websocket = None
-        if autostart:
-            self.start()
-        self.queue_recv = Queue()
-        self.queue_send = Queue()
 
-    def start(self):
-        asyncio.get_event_loop().run_until_complete(self._listen_forever())
+        if autostart:
+            self.start_asyncio()
+
+
+    def start_process(self):
+        from multiprocessing import Process
+        process = Process(target=self.start_asyncio)
+        process.start()
+    def start_asyncio(self):
+        try:
+            asyncio.run(self.asyncio_main())
+        except KeyboardInterrupt:
+            pass
+    async def asyncio_main(self):
+        await asyncio.gather( # asyncio.wait(<list>
+            self._listen_forever(),  #asyncio.ensure_future(
+            self._monitor_send_queue(),  #asyncio.ensure_future(
+        )
+
+    def close(self):
+        self.active = False
+
     async def _listen_forever(self):
         """
-        https://github.com/aaugustin/websockets/issues/414
+        Auto Reconnect Pattern - https://github.com/aaugustin/websockets/issues/414
         """
         while self.active:
             try:
-                log.info('attempting')
+                log.info(f'connecting: {self.uri}')
                 async with websockets.connect(self.uri) as self.websocket:
                     self.onConnected()
                     while self.active:
@@ -61,9 +92,12 @@ class SocketReconnect(object):
                                 continue
                             except:
                                 break
-                        self._onMessage(data)
+                        self.queue_recv.put_nowait(self.loads(data))
                     self.onDisconnected()
+            except asyncio.CancelledError:
+                break
             except Exception as ex:
+                log.exception('Websocket processing error')
                 self.websocket = None
                 #log.info('Its broken')
             #except socket.gaierror:
@@ -73,25 +107,27 @@ class SocketReconnect(object):
             if not self.websocket:
                 await asyncio.sleep(self.timeout_reconnect.total_seconds())
 
-    def close(self):
-        self.active = False
+    async def _monitor_send_queue(self):
+        while self.active:
+            if not self.websocket:
+                log.debug('No websocket. Wait 1')
+                await asyncio.sleep(1)
+                continue
+            try:
+                log.debug('_monitor_send_queue')
+                await self.websocket.send(self.dumps(await self.queue_send.coro_get(block=True, timeout=1)))
+            except MultiprocessingQueueEmpty:
+                pass
+            except asyncio.CancelledError:
+                break
+            except Exception as ex:
+                log.exception('Failed send')
 
-    async def send(self, data):
-        try:
-            await self.websocket.send(umsgpack.dumps(data))
-        except Exception:
-            log.debug('Failed send. Socket not connected: {0}'.format(data))
-
-    def _onMessage(self, data):
-        self.onMessage(umsgpack.loads(data))
-
-    # To be overridden
+    # To be overridden?
     def onConnected(self):
         log.info(f'onConnected {self.uri}')
     def onDisconnected(self):
         log.info(f'onDisconnected {self.uri}')
-    def onMessage(self, data):
-        log.info(data)
 
 
 if __name__ == "__main__":
