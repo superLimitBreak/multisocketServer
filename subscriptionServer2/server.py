@@ -21,11 +21,13 @@ class SubscriptionServer():
         self.echo_back_to_source = echo_back_to_source
         self.auto_subscribe_to_all_fallback = auto_subscribe_to_all_fallback
 
+        self.process = None
+        self.stop = None
+
         self.actions = {
             'subscribe': self.actionSubscribe,
             'message': self.actionMessage,
         }
-
         self.subscriptions = defaultdict(set)
 
     def onConnected(self, source):
@@ -83,20 +85,32 @@ class SubscriptionServer():
             del self.subscriptions[source]
             self.onDisconnected(source)
 
-    def start(self):
+    def close(self):
+        log.info('close')
+        if self.stop:
+            self.stop.set_result()
+        if self.process:
+            self.process.terminate()
+        log.info('close done')
+
+    def start_asyncio(self):
         log.info(f'Starting: port:{self.port}')
         loop = asyncio.get_event_loop()
-        stop = loop.create_future()
-        loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
+        self.stop = loop.create_future()
+        loop.add_signal_handler(signal.SIGTERM, self.stop.set_result, None)
         async def server_with_stop(stop):
             async with websockets.serve(self.subscription_server, "0.0.0.0", self.port):
                 await stop
         try:
-            loop.run_until_complete(server_with_stop(stop))
+            loop.run_until_complete(server_with_stop(self.stop))
         except KeyboardInterrupt as ex:
             pass
         finally:
             log.info('Shutdown')
+    def start_process_daemon(self):
+        from multiprocessing import Process
+        self.process = Process(target=self.start_asyncio)
+        self.process.start()
 
 
 def get_args():
@@ -120,4 +134,4 @@ if __name__ == "__main__":
     options = get_args()
     logging.basicConfig(level=options['log_level'])
 
-    SubscriptionServer(**options).start()
+    SubscriptionServer(**options).start_asyncio()
