@@ -62,7 +62,7 @@ class SubscriptionServer():
                 if
                 (self.auto_subscribe_to_all_fallback and not client_subscriptions)
                 or
-                (set(message.get('deviceid').split(',')) & client_subscriptions)  # (isinstance(message, dict) and
+                (set(message.get('deviceid', '').split(',')) & client_subscriptions)  # (isinstance(message, dict) and
             )
             if not messages_for_this_client:
                 continue
@@ -107,7 +107,7 @@ class SubscriptionServer():
             pass
         finally:
             log.info('Shutdown')
-    def start_process_daemon(self):
+    def start_process(self):
         from multiprocessing import Process
         self.process = Process(target=self.start_asyncio)
         self.process.start()

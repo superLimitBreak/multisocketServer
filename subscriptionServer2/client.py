@@ -31,7 +31,7 @@ class SocketReconnect():
     """
     def __init__(
         self,
-        uri,
+        uri="ws://localhost:9873",
         timeout_reconnect=DEFAULT_RECONNECT_TIMEOUT,
         #buffer_failed_sends=False,
         loads=umsgpack.loads,
@@ -49,8 +49,9 @@ class SocketReconnect():
 
         self.active = True
         self.websocket = None
+        self.process = None
 
-    def start_process_daemon(self):
+    def start_process(self):
         from multiprocessing import Process
         self.process = Process(target=self.start_asyncio, daemon=True)
         self.process.start()
@@ -67,7 +68,8 @@ class SocketReconnect():
 
     def close(self):
         self.active = False
-        self.process.join()
+        if self.process:
+            self.process.join()
 
     async def _listen_forever(self):
         """
@@ -169,7 +171,7 @@ class SubscriptionClient(SocketReconnect):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    socket = SubscriptionClient(uri="ws://localhost:9873")
-    socket.start_process_daemon()
+    socket = SubscriptionClient()
+    socket.start_process()
     import pdb ; pdb.set_trace()
     pass
