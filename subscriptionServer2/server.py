@@ -89,11 +89,10 @@ class SubscriptionServer():
         stop = loop.create_future()
         loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
         async def server_with_stop(stop):
-            async with websockets.serve(self.subscription_server, "0.0.0.0", self.port):  # TODO: remove localhost?
+            async with websockets.serve(self.subscription_server, "0.0.0.0", self.port):
                 await stop
         try:
             loop.run_until_complete(server_with_stop(stop))
-            #loop.run_forever()  # this is redundent?
         except KeyboardInterrupt as ex:
             pass
         finally:
