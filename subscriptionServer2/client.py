@@ -9,7 +9,6 @@ import websockets
 import umsgpack
 
 import logging
-log = logging.getLogger(__name__)
 
 
 DEFAULT_RECONNECT_TIMEOUT = datetime.timedelta(seconds=5)
@@ -36,7 +35,10 @@ class SocketReconnect():
         #buffer_failed_sends=False,
         loads=umsgpack.loads,
         dumps=umsgpack.dumps,
+        name=__name__,
     ):
+        self.name = name
+        self.log = logging.getLogger(name)
         self.uri = uri
         self.timeout_reconnect = timeout_reconnect if isinstance(timeout_reconnect, datetime.timedelta) else datetime.timedelta(seconds=timeout_reconnect)
         self.timeout_msg = self.timeout_reconnect  # temp
@@ -66,6 +68,10 @@ class SocketReconnect():
             self._monitor_send_queue(),
         )
 
+    #@property
+    #def connected(self):
+    #    return self.active and self.websocket
+
     def close(self):
         self.active = False
         if self.process:
@@ -77,7 +83,7 @@ class SocketReconnect():
         """
         while self.active:
             try:
-                log.info(f'connecting: {self.uri}')
+                self.log.info(f'connecting: {self.uri}')
                 async with websockets.connect(self.uri) as self.websocket:
                     self.onConnected()
                     while self.active:
@@ -95,36 +101,36 @@ class SocketReconnect():
             except asyncio.CancelledError:
                 break
             except Exception as ex:
-                log.exception('Websocket processing error')
+                self.log.exception('Websocket processing error')
                 self.websocket = None
-                #log.info('Its broken')
+                #self.log.info('Its broken')
             #except socket.gaierror:
-            #    log.info('Connection error?')
+            #    self.log.info('Connection error?')
             #except ConnectionRefusedError:
-            #    log.info('ConnectionRefusedError')
+            #    self.log.info('ConnectionRefusedError')
             if not self.websocket:
                 await asyncio.sleep(self.timeout_reconnect.total_seconds())
 
     async def _monitor_send_queue(self):
         while self.active:
             #if not self.websocket:
-            #    log.debug('No websocket. Wait 1')
+            #    self.log.debug('No websocket. Wait 1')
             #    await asyncio.sleep(1)
             #    continue
             try:
                 if not self.websocket:
-                    asyncio.sleep(0.1)
+                    await asyncio.sleep(0.1)
                     continue
-                log.debug('_monitor_send_queue')
+                self.log.debug('_monitor_send_queue')
                 message = await self.queue_send.coro_get(block=True, timeout=1)
-                log.info(f'send: {message}')
+                self.log.info(f'send: {message}')
                 await self.websocket.send(self.dumps(message))
             except MultiprocessingQueueEmpty:
                 pass
             except asyncio.CancelledError:
                 break
             except Exception as ex:
-                log.exception('Failed send')
+                self.log.exception('Failed send')
 
     def send(self, data):
         self.queue_send.put_nowait(data)
@@ -132,9 +138,9 @@ class SocketReconnect():
     def onMessage(self, data):
         self.queue_recv.put_nowait(data)
     def onConnected(self):
-        log.info(f'onConnected {self.uri}')
+        self.log.info(f'onConnected {self.uri}')
     def onDisconnected(self):
-        log.info(f'onDisconnected {self.uri}')
+        self.log.info(f'onDisconnected {self.uri}')
 
 
 class SubscriptionClient(SocketReconnect):
