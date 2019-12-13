@@ -54,7 +54,7 @@ class SubscriptionServer():
         log.info(f'subscribe: {source.remote_address} {self.subscriptions[source]}')
 
     async def actionMessage(self, source, data):
-        for client, client_subscriptions in self.subscriptions.items():  # TODO: add async iter to end to multiple clients fast
+        for client, client_subscriptions in self.subscriptions.items():
             if not self.echo_back_to_source and client == source:
                 continue
             messages_for_this_client = tuple(
@@ -86,12 +86,10 @@ class SubscriptionServer():
             self.onDisconnected(source)
 
     def close(self):
-        log.info('close')
         if self.stop:
             self.stop.set_result()
         if self.process:
             self.process.terminate()
-        log.info('close done')
 
     def start_asyncio(self):
         log.info(f'Starting: port:{self.port}')

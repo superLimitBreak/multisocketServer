@@ -69,7 +69,7 @@ class SocketReconnect():
     def close(self):
         self.active = False
         if self.process:
-            self.process.join()
+            self.process.terminate()
 
     async def _listen_forever(self):
         """
@@ -112,6 +112,9 @@ class SocketReconnect():
             #    await asyncio.sleep(1)
             #    continue
             try:
+                if not self.websocket:
+                    asyncio.sleep(0.1)
+                    continue
                 log.debug('_monitor_send_queue')
                 message = await self.queue_send.coro_get(block=True, timeout=1)
                 log.info(f'send: {message}')
