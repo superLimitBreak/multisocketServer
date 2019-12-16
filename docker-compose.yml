@@ -3,7 +3,7 @@ version: '3.6'
 services:
 
   subscriptionserver:
-    image: superlimitbreak/subscriptionserver:latest
+    image: superlimitbreak/subscriptionserver2:latest
     build:
       context: server/
     ports:
