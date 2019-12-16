@@ -9,6 +9,7 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 FROM base as code
 COPY \
+    __init__.py \
     client.py \
     server.py \
 ./

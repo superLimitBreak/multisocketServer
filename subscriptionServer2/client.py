@@ -146,12 +146,12 @@ class SocketReconnect():
 class SubscriptionClient(SocketReconnect):
 
     def __init__(self, *args, subscriptions=(), **kwargs):
-        self.update_subscriptions(*subscriptions, send=False)
+        self.update_subscriptions(*subscriptions, send_immediately=False)
         super().__init__(*args, **kwargs)
 
-    def update_subscriptions(self, *subscriptions, send=True):
+    def update_subscriptions(self, *subscriptions, send_immediately=True):
         self.subscriptions = set(subscriptions) if subscriptions else set()
-        if send:
+        if send_immediately:
             self.send_subscriptions()
 
     def send_subscriptions(self):

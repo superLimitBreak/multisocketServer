@@ -11,7 +11,7 @@ from ..client import SubscriptionClient
 
 
 log = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(process)d %(name)s: %(message)s')
 
 
 # Utils ------------------------------------------------------------------------
@@ -75,10 +75,13 @@ def test_server_client_basic_send(client1, client2):
 
 def test_server_client_subscribe_send(client1, client2, client3):
     wait_for_all_clients_empty = partial(wait_client_queue_recv_empty, client1, client2, client3)
+
+    # Because of threading - this `update_subscriptions` happens BEFORE subscriptions given in the client constructor.
+    # So we sleep for a moment to ensure the correct order
+    time.sleep(0.1)
     client1.update_subscriptions('clients_all', 'clients_group_a', 'client1')
     client2.update_subscriptions('clients_all', 'clients_group_a', 'client2')
     client3.update_subscriptions('clients_all', 'clients_group_b', 'client3')
-    time.sleep(0.1)
 
     message = {'deviceid': 'clients_all', 'a': 1}
     client1.send_message(message)
