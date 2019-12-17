@@ -10,6 +10,8 @@ import umsgpack
 
 import logging
 
+logger_websockets = logging.getLogger("websockets")
+logger_websockets.setLevel(logging.INFO)
 
 DEFAULT_RECONNECT_TIMEOUT = datetime.timedelta(seconds=5)
 
@@ -100,14 +102,18 @@ class SocketReconnect():
                     self.onDisconnected()
             except asyncio.CancelledError:
                 break
+            except OSError:
+                pass
             except Exception as ex:
                 self.log.exception('Websocket processing error')
+            finally:
                 self.websocket = None
                 #self.log.info('Its broken')
             #except socket.gaierror:
             #    self.log.info('Connection error?')
             #except ConnectionRefusedError:
             #    self.log.info('ConnectionRefusedError')
+            # TODO: self.websocket is ALWAYS None?
             if not self.websocket:
                 await asyncio.sleep(self.timeout_reconnect.total_seconds())
 
