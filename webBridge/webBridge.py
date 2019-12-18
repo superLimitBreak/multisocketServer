@@ -40,10 +40,10 @@ def get_args():
 
     parser = argparse.ArgumentParser(
         prog=__name__,
-        description=f'''
+        description='''
             Provide a URL endpoint to send event triggers via a url to a running subscription_server.py
 
-            curl -XGET http://localhost:{DEFAULT_PORT}/ -d '{"function": "screen_size.set", "deviceid": "main", "top":"100px", "left":"100px", "width": "400px", "height":"300px"}'
+            curl -XGET http://localhost:9873/ -d '{"function": "screen_size.set", "deviceid": "main", "top":"100px", "left":"100px", "width": "400px", "height":"300px"}'
         ''',
     )
 
