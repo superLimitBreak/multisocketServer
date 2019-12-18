@@ -1,10 +1,6 @@
 CONTAINER_TAG_WEB_BRIDGE=superlimitbreak/subscriptionserver_bridge:latest
 
-
-client_reconnect.py:
-	cp ../multisocketServer/client/client_reconnect.py ./
-
-build: client_reconnect.py
+build:
 	docker build --tag ${CONTAINER_TAG_WEB_BRIDGE} .
 
 push:
@@ -14,8 +10,7 @@ run:
 	docker run -it --rm ${CONTAINER_TAG_WEB_BRIDGE}
 
 run_local:
-	python3 webBridge.py localhost:9872 --port 10794
+	python3 webBridge.py ws://localhost:9873 --port 10794
 
 clean:
-	rm -rf client_reconnect.py
 	docker rmi ${CONTAINER_TAG_WEB_BRIDGE}

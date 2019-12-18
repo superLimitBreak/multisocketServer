@@ -1,6 +1,13 @@
 FROM python:alpine
-RUN pip install falcon
-COPY client_reconnect.py webBridge.py /
+
+ARG PYTHON_REQUIREMNTS=requirements.txt
+COPY ${PYTHON_REQUIREMNTS} ${PYTHON_REQUIREMNTS}
+RUN apk add --no-cache \
+        --virtual .build-deps git &&\
+    pip3 install --no-cache-dir -r ${PYTHON_REQUIREMNTS} &&\
+    apk del .build-deps
+
+COPY webBridge.py /
 
 EXPOSE 10794
 

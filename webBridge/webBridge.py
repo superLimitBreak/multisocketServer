@@ -1,10 +1,10 @@
 import falcon
 import json
 
-from client_reconnect import SubscriptionClient
+from subscriptionServer2.client import SubscriptionClient
 
 DEFAULT_PORT = 10794
-DEFAULT_SUBSCRIPTIONSERVER_HOST = 'localhost:9872'
+DEFAULT_SUBSCRIPTIONSERVER_URI = 'ws://localhost:9873'
 
 
 class URLtoSubscriptionServerBridge():
@@ -25,18 +25,8 @@ class URLtoSubscriptionServerBridge():
 
 # Setup App -------------------------------------------------------------------
 
-def create_wsgi_app(subscriptionserver_host=None, **kwargs):
-    subscriptionserver_host = subscriptionserver_host or DEFAULT_SUBSCRIPTIONSERVER_HOST
-
-    def parse_hostname_port(host):
-        data = host.split(':')
-        if len(data) == 1:
-            return {'host': data[0]}
-        if len(data) == 2:
-            return {'host': data[0], 'port': int(data[1])}
-        raise AttributeError(f'host {host} un-parseable')
-
-    subscription_client = SubscriptionClient(**parse_hostname_port(subscriptionserver_host))
+def create_wsgi_app(subscriptionserver_uri=None, **kwargs):
+    subscription_client = SubscriptionClient(subscriptionserver_uri or DEFAULT_SUBSCRIPTIONSERVER_URI)
 
     app = falcon.API()
     app.add_route('/', URLtoSubscriptionServerBridge(subscription_client))
@@ -50,17 +40,17 @@ def get_args():
 
     parser = argparse.ArgumentParser(
         prog=__name__,
-        description='''
+        description=f'''
             Provide a URL endpoint to send event triggers via a url to a running subscription_server.py
 
-            curl -XGET http://localhost:8000/ -d '{"function": "screen_size.set", "deviceid": "main", "top":"100px", "left":"100px", "width": "400px", "height":"300px"}'
+            curl -XGET http://localhost:{DEFAULT_PORT}/ -d '{"function": "screen_size.set", "deviceid": "main", "top":"100px", "left":"100px", "width": "400px", "height":"300px"}'
         ''',
     )
 
     parser.add_argument('--host', action='store', default='0.0.0.0', help='')
     parser.add_argument('--port', action='store', default=DEFAULT_PORT, type=int, help='')
 
-    parser.add_argument('subscriptionserver_host', action='store', default=DEFAULT_SUBSCRIPTIONSERVER_HOST, help='')
+    parser.add_argument('subscriptionserver_uri', action='store', default=DEFAULT_SUBSCRIPTIONSERVER_URI, help='')
 
     kwargs = vars(parser.parse_args())
     return kwargs
