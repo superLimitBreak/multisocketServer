@@ -129,7 +129,7 @@ class SocketReconnect():
                     continue
                 self.log.debug('_monitor_send_queue')
                 message = await self.queue_send.coro_get(block=True, timeout=1)
-                self.log.info(f'send: {message}')
+                self.log.debug(f'send: {message}')
                 await self.websocket.send(self.dumps(message))
             except MultiprocessingQueueEmpty:
                 pass

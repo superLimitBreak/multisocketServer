@@ -9,6 +9,10 @@ import umsgpack
 import logging
 log = logging.getLogger(__name__)
 
+logger_websockets = logging.getLogger("websockets")
+logger_websockets.setLevel(logging.INFO)
+
+
 
 __version__ = 0.01
 DEFAULT_PORT = 9873
@@ -46,8 +50,8 @@ class SubscriptionServer():
     def _parse_subscription_set(keys):
         if not keys:
             return set()
-        if isinstance(keys, (str, bytes)):
-            return {map(operator.attrgetter('strip'), keys.split(','))}
+        if isinstance(keys, str):
+            return set(key.strip() for key in keys.split(','))
         return set(keys)
     async def actionSubscribe(self, source, data):
         self.subscriptions[source] = self._parse_subscription_set(data)
@@ -58,15 +62,16 @@ class SubscriptionServer():
             if not self.echo_back_to_source and client == source:
                 continue
             messages_for_this_client = tuple(
-                message for message in data
+                message
+                for message in data
                 if
                 (self.auto_subscribe_to_all_fallback and not client_subscriptions)
                 or
-                (set(message.get('deviceid', '').split(',')) & client_subscriptions)  # (isinstance(message, dict) and
+                (set(deviceid.strip() for deviceid in message.get('deviceid', '').split(',')) & client_subscriptions)  # (isinstance(message, dict) and
             )
             if not messages_for_this_client:
                 continue
-            log.info(f'message: {source.remote_address} {messages_for_this_client}')
+            log.debug(f'message: {source.remote_address} {messages_for_this_client}')
             await client.send(umsgpack.dumps(
                 {'action': 'message', 'data': messages_for_this_client}
             ))
