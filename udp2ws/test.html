@@ -1,0 +1,18 @@
+<html>
+    <head>
+        <title>test</title>
+    </head>
+    <body>
+        <script type="module">
+            const url = `ws://${window.location.hostname}:9874/`;
+            const socket = new WebSocket(url);
+            socket.binaryType = 'arraybuffer';
+            socket.onopen = () => {
+                socket.send("hello");
+            }
+            socket.onmessage = (msg) => {
+                console.log(msg.data);
+            };
+        </script>
+    </body>
+</html>
