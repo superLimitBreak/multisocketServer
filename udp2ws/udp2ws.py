@@ -16,16 +16,21 @@ class Udp2ws():
         self.port_websocket = port_websocket
 
         self.connections = set()
+        self._queue_udp_messages = asyncio.Queue()
+        log.info("there can be only one")
 
-    def onConnected(self, source):
-        log.info(f'onConnected: {source.remote_address}')
+    async def _send_to_all_websockets(self):
+        # https://stackoverflow.com/questions/53733140/how-to-use-udp-with-asyncio-for-multiple-file-transfer-from-server-to-client-p
+        log.info("Starting udp queue listener")
+        while True:
+            log.info(f"waiting for the god damn queue {id(self._queue_udp_messages)}")
+            data, addr = await self._queue_udp_messages.get()  # block=True, timeout=1
+            log.info("2")
+            for websocket in self.connections:
+                await websocket.send(data)
 
-    def onDisconnected(self, source):
-        log.info(f'onDisconnected: {source.remote_address}')
-
-    async def new_connection(self, websocket, path):
+    async def new_websocket_connection(self, websocket, path):
         self.connections.add(websocket)
-        self.onConnected(websocket)
         try:
             async for data in websocket:
                 log.info(data)
@@ -35,7 +40,6 @@ class Udp2ws():
             log.exception('Error with websocket connection')
         finally:
             self.connections.remove(websocket)
-            self.onDisconnected(websocket)
 
     async def serve_websocket(self):
         log.info("Starting Websocket server")
@@ -43,7 +47,7 @@ class Udp2ws():
         self.stop = loop.create_future()
         loop.add_signal_handler(signal.SIGTERM, self.stop.set_result, None)
         async def server_with_stop(stop):
-            async with websockets.serve(self.new_connection, "0.0.0.0", self.port_websocket):
+            async with websockets.serve(self.new_websocket_connection, "0.0.0.0", self.port_websocket):
                 await stop
         await server_with_stop(self.stop)
         #try:
@@ -54,29 +58,38 @@ class Udp2ws():
         #    log.info('Shutdown')
 
     async def serve_udp(self):
-        # https://docs.python.org/3/library/asyncio-protocol.html#asyncio-udp-echo-server-protocol
+        class UdpReceiver(asyncio.DatagramProtocol):
+            def __init__(self, queue):
+                self.queue = queue
+            def connection_made(self, transport):
+                self.transport = transport
+            def datagram_received(self, data, addr):
+                log.info(f'{self.queue.qsize()} {data} {id(self.queue)}')
+                self.queue.put_nowait((data, addr))
+
         log.info("Starting UDP server")
         loop = asyncio.get_running_loop()
         await loop.create_datagram_endpoint(
-            self.EchoServerProtocol, 
+            lambda: UdpReceiver(self._queue_udp_messages),
             local_addr=('0.0.0.0', self.port_udp),
         )
 
-    class EchoServerProtocol():
-        def connection_made(self, transport):
-            self.transport = transport
-
-        def datagram_received(self, data, addr):
-            message = data.decode()
-            log.info('Received %r from %s' % (message, addr))
-            log.info('Send %r to %s' % (message, addr))
-            self.transport.sendto(data, addr)
+            #try:
+            #except asyncio.QueueFull:
+            #    log.warn('udp queue is full')
+            
+            #message = data.decode()
+            #log.info('Received %r from %s' % (message, addr))
+            #log.info('Send %r to %s' % (message, addr))
+            #self.transport.sendto(data, addr)
 
     async def run(self):
         task1 = asyncio.create_task(self.serve_udp())
         task2 = asyncio.create_task(self.serve_websocket())
+        task3 = asyncio.create_task(self._send_to_all_websockets())
         await task1
         await task2
+        await task3
 
 def get_args():
     import argparse
